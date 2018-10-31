@@ -58,6 +58,8 @@ public class MapManager {
         start = source.indexOf("<dt>", start);
         end = source.indexOf( "a href", start);
         for(int i = 0;i < 10;i++) {
+            this.name = "";
+            this.addr = "";
             //점포명 추출
             while(true) {
                 start = source.indexOf(">", end) + 1;
