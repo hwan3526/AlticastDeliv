@@ -34,5 +34,8 @@ public class MainActivity extends AppCompatActivity {
             adapter.add(sr.name[i]);
             adapter2.add(sr.addr[i]);
         }
+
+        listView.setAdapter(adapter);
+        listView2.setAdapter(adapter2);
     }
 }
