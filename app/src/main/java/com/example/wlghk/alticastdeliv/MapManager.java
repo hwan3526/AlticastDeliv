@@ -31,8 +31,8 @@ public class MapManager {
         String htmlCode = "";
 
         try {
-            URL url = new URL("https://www.google.com/");
-            //URL url = new URL("https://map.naver.com/?query=" + keyword);
+            //URL url = new URL("https://www.google.com/");
+            URL url = new URL("https://map.naver.com/?query=" + keyword);
             BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
 
             String inputLine;
@@ -81,7 +81,6 @@ public class MapManager {
 
             this.sr.name[i] = this.name;
             this.sr.addr[i] = this.addr;
-
         }
         /*
         this.sr.name[0] = this.source;
