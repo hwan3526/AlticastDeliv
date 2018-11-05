@@ -1,22 +1,13 @@
 package com.example.wlghk.alticastdeliv;
 
-import android.os.Handler;
-import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity implements Runnable{
@@ -28,21 +19,6 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     String[] name;
     String[] lon;
     String[] lat;
-
-    Handler handler = new Handler(){
-        @Override
-        public void handleMessage(Message msg){
-            super.handleMessage(msg);
-
-            getInformation();
-            //textView.setText(htmlsource);//사용된 HTML 소스가 보고 싶다면 사용
-            for(int i = 0;i < 30;i++)
-                adapter.add(name[i]+" "+lon[i]+" "+lat[i]);
-
-            listView.setAdapter(adapter);
-
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,13 +37,23 @@ public class MainActivity extends AppCompatActivity implements Runnable{
 
         Thread th = new Thread(MainActivity.this);
         th.start();
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                getInformation();
+                //textView.setText(htmlsource);//사용된 HTML 소스가 보고 싶다면 사용
+                for(int i = 0;i < 30;i++)
+                    adapter.add(name[i]+" "+lon[i]+" "+lat[i]);
+
+                listView.setAdapter(adapter);
+            }
+        });
     }
 
     @Override
     public void run(){
         getHTML("피자");
-
-        handler.sendEmptyMessage(0);
     }
 
     void getHTML(String keyword) {
