@@ -19,9 +19,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements Runnable{
     ListView listView;
     ArrayAdapter<String> adapter;
-    TextView textView;
 
-    String searchhtmlsource, menuhtmlsource;
     ArrayList<Store> searchresult;
     LocationManager lm;
     MyLocation mylocation;
@@ -33,12 +31,9 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         setContentView(R.layout.activity_main);
 
         listView = (ListView) findViewById(R.id.listView);
-        textView = (TextView) findViewById(R.id.textView);
 
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_expandable_list_item_1);
 
-        searchhtmlsource = "";
-        menuhtmlsource = "";
         searchresult = new ArrayList<Store>();
         mylocation = new MyLocation();
         getLocation();
@@ -50,9 +45,8 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                textView.setText(searchhtmlsource);//사용된 HTML 소스가 보고 싶다면 사용
                 for(int i = 0;i < numofresult;i++)
-                    adapter.add(searchresult.get(i).getName()+" "+searchresult.get(i).getDistance()+" 메뉴갯수: "+searchresult.get(i).getMenulist().size());
+                    adapter.add(searchresult.get(i).getName()+", 거리: "+searchresult.get(i).getDistance()+"m, 메뉴갯수: "+((searchresult.get(i)).getMenulist()).size());
 
                 listView.setAdapter(adapter);
             }
@@ -61,77 +55,69 @@ public class MainActivity extends AppCompatActivity implements Runnable{
 
     @Override
     public void run(){
-        getInformation("치킨");
+        getStoreInformation("치킨");
+        for(int i = 0 ; i < searchresult.size() ; i++)
+            getMenuInformation(i);
     }
 
-    void getInformation(String keyword){
+    void getStoreInformation(String keyword){
         int index=0, start, end;
         String name, id;
         int distance;
-        ArrayList<Menu> menulist;
 
-        getSearchHTML(keyword);
+        String htmlsource = getSearchHTML(keyword);
         for(int i = 0; i < numofresult; i++){
-            index = searchhtmlsource.indexOf("\"index\"", index);
+            index = htmlsource.indexOf("\"index\"", index);
             //점포ID
-            start = (searchhtmlsource.indexOf("\"id\"", index))+8;
-            end = searchhtmlsource.indexOf("\"", start);
-            id = searchhtmlsource.substring(start, end);
+            start = (htmlsource.indexOf("\"id\"", index))+8;
+            end = htmlsource.indexOf("\"", start);
+            id = htmlsource.substring(start, end);
             //점포명
-            start = (searchhtmlsource.indexOf("\"name\"", index))+9;
-            end = searchhtmlsource.indexOf("\"", start);
-            name = searchhtmlsource.substring(start, end);
+            start = (htmlsource.indexOf("\"name\"", index))+9;
+            end = htmlsource.indexOf("\"", start);
+            name = htmlsource.substring(start, end);
             //거리
-            start = (searchhtmlsource.indexOf("\"distance\"", end))+13;
-            end = searchhtmlsource.indexOf("\"", start);
-            distance =  Integer.valueOf(searchhtmlsource.substring(start, end));
+            start = (htmlsource.indexOf("\"distance\"", end))+13;
+            end = htmlsource.indexOf("\"", start);
+            distance =  Integer.valueOf(htmlsource.substring(start, end));
             Log.d("StoreInfo",id+" "+name+" "+distance);
-            //메뉴목록
-            getMenuHTML(id);
-            menulist = getMenuInformation(id);
 
-            searchresult.add(new Store(name, distance, menulist));
+            searchresult.add(new Store(id, name, distance));
         }
     }
 
-    ArrayList<Menu> getMenuInformation(String id){
+    void getMenuInformation(int idx){
         int index=0, start, end;
-        String name, photo, tmp;
+        String name, photo;
         int cost;
 
-        ArrayList<Menu> menulist = new ArrayList<Menu>();
+        String htmlsource = getMenuHTML(searchresult.get(idx).id);
         for(int i = 0; i < numofresult; i++){
-            index = searchhtmlsource.indexOf("\"display:block\"", index);
+            index = htmlsource.indexOf("\"display:block\"", index);
             //가격
-            start = (searchhtmlsource.indexOf("\"price\"", index))+8;
-            end = searchhtmlsource.indexOf("원", start);
-            tmp = searchhtmlsource.substring(start, end);
-            for(int j = 0; j < tmp.length();j++){
-                if(tmp.charAt(j) == ',')
-                    tmp = tmp.substring(0,j)+tmp.substring(j+1,tmp.length()-1);
-            }
-            cost = Integer.valueOf(tmp);
+            start = (htmlsource.indexOf("\"price\"", index))+8;
+            end = htmlsource.indexOf("원", start);
+            cost = Integer.valueOf((htmlsource.substring(start, end)).replaceAll(",",""));
             //사진
-            if(searchhtmlsource.indexOf("\"photo_count\"",end)!=-1){
-                photo = "https://m.store.naver.com/restaurants/" + id + "#photoId=menuSample_"+ String.valueOf(i);
-                end = searchhtmlsource.indexOf("\"photo_count\"",end);
+            if(htmlsource.indexOf("\"photo_count\"",end)!=-1){
+                photo = "https://m.store.naver.com/restaurants/" + searchresult.get(idx).id + "#photoId=menuSample_"+ String.valueOf(i);
+                end = htmlsource.indexOf("\"photo_count\"",end);
             }
             else{
                 photo = "";
             }
             //이름
-            start = (searchhtmlsource.indexOf("<span>", end))+6;
-            end = searchhtmlsource.indexOf("</span>", start);
-            name = searchhtmlsource.substring(start, end);
+            start = (htmlsource.indexOf("<span>", end))+6;
+            end = htmlsource.indexOf("</span>", start);
+            name = htmlsource.substring(start, end);
 
             Log.d("MenuList",name+" "+cost+" "+photo);
-            menulist.add(new Menu(name,cost,photo));
+            ((searchresult.get(idx)).getMenulist()).add(new Menu(name,cost,photo));
         }
-        return menulist;
     }
 
-    void getSearchHTML(String keyword) {
-        String str;
+    String getSearchHTML(String keyword) {
+        String str = "";
 
         try {
             URL url = new URL("https://m.map.naver.com/search2/search.nhn?query="+keyword+"&sm=clk&centerCoord="+mylocation.getLatitude()+":"+mylocation.getLongitude());
@@ -139,8 +125,8 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             BufferedReader br = new BufferedReader(isr);
 
             while(!(str = br.readLine()).contains("var searchResult"));
-            searchhtmlsource = str.substring(str.indexOf("var searchResult"));
-            Log.d("searchhtmlsource", searchhtmlsource);
+            str = str.substring(str.indexOf("var searchResult"));
+            Log.d("searchhtmlsource", str);
 
             br.close();
             isr.close();
@@ -148,10 +134,11 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return str;
     }
 
-    void getMenuHTML(String storeid) {
-        String str;
+    String getMenuHTML(String storeid) {
+        String str = "";
 
         try {
             URL url = new URL("https://m.store.naver.com/restaurants/" + storeid);
@@ -159,8 +146,8 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             BufferedReader br = new BufferedReader(isr);
 
             while(!(str = br.readLine()).contains("\"list_menu\""));
-            menuhtmlsource = str.substring(str.indexOf("\"list_menu\""));
-            Log.d("menuhtmlsource", menuhtmlsource);
+            str = str.substring(str.indexOf("\"list_menu\""));
+            Log.d("menuhtmlsource", str);
 
             br.close();
             isr.close();
@@ -168,6 +155,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return str;
     }
 
     void getLocation(){
@@ -208,19 +196,20 @@ public class MainActivity extends AppCompatActivity implements Runnable{
 }
 
 class Store {
-    String name;
+    String id, name;
     int distance;
     ArrayList<Menu> menulist;
 
     public Store(){
 
     }
-    public Store(String name, int distance, ArrayList<Menu> menulist){
+    public Store(String id, String name, int distance){
         this.name = name;
         this.distance = distance;
-        this.menulist = menulist;
+        this.menulist = new ArrayList<Menu>();
     }
 
+    public String getID(){ return this.id; }
     public String getName(){
         return this.name;
     }
@@ -233,6 +222,7 @@ class Store {
     public Menu getMenu(int i){
         return this.menulist.get(i);
     }
+    public void setID(String id){ this.id = id;}
     public void setName(String name){
         this.name = name;
     }
