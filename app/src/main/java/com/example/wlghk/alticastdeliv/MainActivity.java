@@ -41,6 +41,8 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         menuhtmlsource = "";
         searchresult = new ArrayList<Store>();
         mylocation = new MyLocation();
+        getLocation();
+        Log.d("myLocation", mylocation.getLatitude()+": "+mylocation.getLongitude());
 
         Thread th = new Thread(MainActivity.this);
         th.start();
@@ -59,14 +61,13 @@ public class MainActivity extends AppCompatActivity implements Runnable{
 
     @Override
     public void run(){
-        getLocation();
-        getInformation("피자");
+        getInformation("치킨");
     }
 
     void getInformation(String keyword){
         int index=0, start, end;
         String name, id;
-        double distance;
+        int distance;
         ArrayList<Menu> menulist;
 
         getSearchHTML(keyword);
@@ -83,12 +84,13 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             //거리
             start = (searchhtmlsource.indexOf("\"distance\"", end))+13;
             end = searchhtmlsource.indexOf("\"", start);
-            distance =  Float.valueOf(searchhtmlsource.substring(start, end));
+            distance =  Integer.valueOf(searchhtmlsource.substring(start, end));
+            Log.d("StoreInfo",id+" "+name+" "+distance);
             //메뉴목록
             getMenuHTML(id);
             menulist = getMenuInformation(id);
 
-            searchresult.add(new Store(name, (int)distance, menulist));
+            searchresult.add(new Store(name, distance, menulist));
         }
     }
 
@@ -122,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             end = searchhtmlsource.indexOf("</span>", start);
             name = searchhtmlsource.substring(start, end);
 
+            Log.d("MenuList",name+" "+cost+" "+photo);
             menulist.add(new Menu(name,cost,photo));
         }
         return menulist;
@@ -136,7 +139,8 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             BufferedReader br = new BufferedReader(isr);
 
             while(!(str = br.readLine()).contains("var searchResult"));
-            searchhtmlsource = str;
+            searchhtmlsource = str.substring(str.indexOf("var searchResult"));
+            Log.d("searchhtmlsource", searchhtmlsource);
 
             br.close();
             isr.close();
@@ -154,8 +158,9 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             InputStreamReader isr = new InputStreamReader(url.openStream(),"UTF-8");
             BufferedReader br = new BufferedReader(isr);
 
-            while(!(str = br.readLine()).contains("list_menu"));
-            menuhtmlsource = str;
+            while(!(str = br.readLine()).contains("\"list_menu\""));
+            menuhtmlsource = str.substring(str.indexOf("\"list_menu\""));
+            Log.d("menuhtmlsource", menuhtmlsource);
 
             br.close();
             isr.close();
@@ -178,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     private final LocationListener LocationListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
-            Log.d("test", "onLocationChanged, location:"+ location);
+            Log.d("GPS", "onLocationChanged, location:"+ location);
             double longitude = location.getLongitude();
             double latitude = location.getLatitude();
             mylocation.setLongitude(longitude);
@@ -187,17 +192,17 @@ public class MainActivity extends AppCompatActivity implements Runnable{
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.d("test", "onStatusChanged, provider:" + provider + ", status:" + status + " ,Bundle:" + extras);
+            Log.d("GPS", "onStatusChanged, provider:" + provider + ", status:" + status + " ,Bundle:" + extras);
         }
 
         @Override
         public void onProviderEnabled(String provider) {
-            Log.d("test", "onProviderEnabled, provider:" + provider);
+            Log.d("GPS", "onProviderEnabled, provider:" + provider);
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-            Log.d("test", "onProviderDisabled, provider:" + provider);
+            Log.d("GPS", "onProviderDisabled, provider:" + provider);
         }
     };
 }
